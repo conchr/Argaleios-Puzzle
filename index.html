@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Βρες το Παζλ και Αποκάλυψε την Πληροφορία</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        :root {
+            --primary-color: #1a2a6c;
+            --secondary-color: #2a4a7a;
+            --accent-color: #FFD700;
+            --text-color: white;
+            --puzzle-size: min(85vw, 400px);
+            --piece-size: calc(var(--puzzle-size) / 4);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--accent-color);
+            text-align: center;
+            line-height: 1.2;
+            padding: 0 10px;
+        }
+        
+        #game-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: clamp(15px, 4vw, 25px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 95%;
+            transition: all 0.5s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #puzzle-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            width: var(--puzzle-size);
+            height: var(--puzzle-size);
+            margin: 0 auto 20px;
+            border: 3px solid #ffffff;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 1s ease;
+        }
+        
+        .puzzle-piece {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background-repeat: no-repeat;
+            background-image: url('https://raw.githubusercontent.com/conchr/Virtual-Tour/main/13Argaleios.jpg');
+            background-size: var(--puzzle-size) var(--puzzle-size);
+        }
+        
+        .puzzle-piece:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+        
+        .selected {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #ffcc00;
+            z-index: 10;
+            border: 2px solid #ffcc00;
+        }
+        
+        .connected {
+            animation: glow 1s ease;
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #4CAF50; }
+            50% { box-shadow: 0 0 20px #4CAF50; }
+            100% { box-shadow: 0 0 5px #4CAF50; }
+        }
+        
+        /* Στυλ για όταν το παζλ έχει λυθεί - μικραίνει η εικόνα */
+        #puzzle-container.solved {
+            gap: 0;
+            border: none;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+            animation: pulse-gold 2s infinite;
+            transform: scale(0.7);
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+        
+        #puzzle-container.solved .puzzle-piece {
+            border: none;
+            animation: piece-merge 1.5s forwards;
+        }
+        
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.7); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.9); }
+            100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.7); }
+        }
+        
+        @keyframes piece-merge {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Fade out από το μικρό μέγεθος */
+        #puzzle-container.fade-out {
+            animation: fadeOutFromSmall 1.5s ease forwards;
+        }
+        
+        @keyframes fadeOutFromSmall {
+            0% { 
+                opacity: 1;
+                transform: scale(0.7);
+            }
+            100% { 
+                opacity: 0;
+                transform: scale(0.7);
+                display: none;
+            }
+        }
+        
+        /* Κείμενο που εμφανίζεται στη θέση της εικόνας */
+        .text-reveal-container {
+            width: var(--puzzle-size);
+            height: var(--puzzle-size);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .text-reveal {
+            opacity: 0;
+            transform: scale(0.9);
+            animation: textReveal 1.5s ease 1.5s forwards;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes textReveal {
+            0% { 
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.02);
+            }
+            100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .message-content {
+            background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(26,42,108,0.25));
+            padding: 25px;
+            border-radius: 15px;
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .message-content::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFD700"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>');
+            background-repeat: no-repeat;
+            background-size: contain;
+            opacity: 0.8;
+        }
+        
+        .message-content h3 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .message-content p {
+            margin-bottom: 12px;
+            line-height: 1.5;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+        }
+        
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(to right, #4A90E2, #2a4a7a);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            min-width: 140px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+            min-height: 30px;
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            padding: 10px;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: all 0.5s ease;
+        }
+        
+        .win-message {
+            color: var(--accent-color);
+            animation: pulse 1.5s infinite;
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,140,0,0.2));
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .counter {
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0.7;
+        }
+        
+        /* Media Queries για συγκεκριμένες ρυθμίσεις ανά συσκευή */
+        @media (max-width: 500px) {
+            :root {
+                --puzzle-size: 90vw;
+            }
+            
+            #game-container {
+                padding: 15px;
+            }
+            
+            button {
+                padding: 10px 20px;
+                min-width: 120px;
+                font-size: 0.9rem;
+            }
+            
+            #controls {
+                gap: 10px;
+            }
+            
+            .message-content {
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 350px) {
+            :root {
+                --puzzle-size: 95vw;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            button {
+                min-width: 100px;
+                font-size: 0.8rem;
+                padding: 8px 16px;
+            }
+            
+            .message-content {
+                padding: 15px;
+            }
+        }
+        
+        /* Ρύθμιση για οριζόντια κινητά */
+        @media (max-height: 500px) and (orientation: landscape) {
+            body {
+                padding: 10px;
+                justify-content: flex-start;
+            }
+            
+            h1 {
+                margin-bottom: 10px;
+                font-size: 1.5rem;
+            }
+            
+            #game-container {
+                max-width: 100%;
+                padding: 10px;
+            }
+            
+            #puzzle-container {
+                width: 50vh;
+                height: 50vh;
+                margin-bottom: 10px;
+            }
+            
+            .counter, #message {
+                margin: 5px 0;
+            }
+        }
+        
+        /* Ρύθμιση για tablets */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            :root {
+                --puzzle-size: min(70vw, 500px);
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+        
+        /* Ρύθμιση για μεγάλες οθόνες */
+        @media (min-width: 1200px) {
+            :root {
+                --puzzle-size: 450px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Βρες το Παζλ και Αποκάλυψε την Πληροφορία</h1>
+    
+    <div id="game-container">
+        <div class="counter">Μετακινήσεις: <span id="move-counter">0</span></div>
+        <div id="puzzle-container"></div>
+        
+        <!-- Θα προστεθεί δυναμικά το text-reveal-container -->
+        
+        <div id="controls">
+            <button id="solve-btn">Νέο Παιχνίδι</button>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+
+    <div id="celebration" class="celebration"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const puzzleContainer = document.getElementById('puzzle-container');
+            const solveBtn = document.getElementById('solve-btn');
+            const messageEl = document.getElementById('message');
+            const moveCounterEl = document.getElementById('move-counter');
+            const celebrationEl = document.getElementById('celebration');
+            const gameContainer = document.getElementById('game-container');
+            
+            const rows = 4;
+            const cols = 4;
+            const totalPieces = rows * cols;
+            let pieces = [];
+            let selectedPiece = null;
+            let moveCount = 0;
+            let isGameSolved = false;
+            
+            function updatePuzzlePieceBackgrounds() {
+                const puzzleSize = getComputedStyle(puzzleContainer).getPropertyValue('width');
+                const sizeValue = parseInt(puzzleSize);
+                
+                pieces.forEach((piece, i) => {
+                    const currentIndex = parseInt(piece.dataset.index);
+                    const row = Math.floor(currentIndex / cols);
+                    const col = currentIndex % cols;
+                    
+                    const bgPosX = -col * (sizeValue / cols);
+                    const bgPosY = -row * (sizeValue / rows);
+                    
+                    piece.style.backgroundPosition = `${bgPosX}px ${bgPosY}px`;
+                    piece.style.backgroundSize = `${sizeValue}px ${sizeValue}px`;
+                });
+            }
+            
+            function createPuzzle() {
+                puzzleContainer.innerHTML = '';
+                puzzleContainer.classList.remove('solved', 'fade-out');
+                puzzleContainer.style.display = 'grid';
+                pieces = [];
+                selectedPiece = null;
+                moveCount = 0;
+                moveCounterEl.textContent = moveCount;
+                isGameSolved = false;
+                messageEl.textContent = '';
+                messageEl.classList.remove('win-message');
+                celebrationEl.style.opacity = '0';
+                
+                // Αφαίρεση του text-reveal-container αν υπάρχει
+                const existingTextReveal = document.querySelector('.text-reveal-container');
+                if (existingTextReveal) {
+                    existingTextReveal.remove();
+                }
+                
+                for (let i = 0; i < totalPieces; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'puzzle-piece';
+                    piece.dataset.index = i;
+                    
+                    piece.addEventListener('click', () => selectPiece(i));
+                    puzzleContainer.appendChild(piece);
+                    pieces.push(piece);
+                }
+                
+                updatePuzzlePieceBackgrounds();
+            }
+            
+            function selectPiece(index) {
+                if (isGameSolved) return;
+                
+                const piece = pieces[index];
+                
+                if (selectedPiece === null) {
+                    selectedPiece = index;
+                    piece.classList.add('selected');
+                    return;
+                }
+                
+                if (selectedPiece === index) {
+                    piece.classList.remove('selected');
+                    selectedPiece = null;
+                    return;
+                }
+                
+                swapPieces(selectedPiece, index);
+                
+                pieces[selectedPiece].classList.remove('selected');
+                selectedPiece = null;
+                
+                moveCount++;
+                moveCounterEl.textContent = moveCount;
+                
+                updatePuzzlePieceBackgrounds();
+                checkConnections();
+                checkWin();
+            }
+            
+            function swapPieces(index1, index2) {
+                const piece1 = pieces[index1];
+                const piece2 = pieces[index2];
+                
+                const tempIndex = piece1.dataset.index;
+                piece1.dataset.index = piece2.dataset.index;
+                piece2.dataset.index = tempIndex;
+            }
+            
+            function checkConnections() {
+                pieces.forEach(piece => piece.classList.remove('connected'));
+                
+                for (let i = 0; i < totalPieces; i++) {
+                    const currentIndex = parseInt(pieces[i].dataset.index);
+                    
+                    if (i % cols !== cols - 1) {
+                        const rightIndex = parseInt(pieces[i+1].dataset.index);
+                        if (currentIndex + 1 === rightIndex) {
+                            pieces[i].classList.add('connected');
+                            pieces[i+1].classList.add('connected');
+                        }
+                    }
+                    
+                    if (i < totalPieces - cols) {
+                        const bottomIndex = parseInt(pieces[i+cols].dataset.index);
+                        if (currentIndex + cols === bottomIndex) {
+                            pieces[i].classList.add('connected');
+                            pieces[i+cols].classList.add('connected');
+                        }
+                    }
+                }
+            }
+            
+            function shufflePieces() {
+                messageEl.textContent = '';
+                messageEl.classList.remove('win-message');
+                puzzleContainer.classList.remove('solved', 'fade-out');
+                puzzleContainer.style.display = 'grid';
+                isGameSolved = false;
+                celebrationEl.style.opacity = '0';
+                
+                // Αφαίρεση του text-reveal-container αν υπάρχει
+                const existingTextReveal = document.querySelector('.text-reveal-container');
+                if (existingTextReveal) {
+                    existingTextReveal.remove();
+                }
+                
+                for (let i = 0; i < 500; i++) {
+                    const index1 = Math.floor(Math.random() * totalPieces);
+                    let index2;
+                    
+                    do {
+                        index2 = Math.floor(Math.random() * totalPieces);
+                    } while (index1 === index2);
+                    
+                    swapPieces(index1, index2);
+                }
+                
+                moveCount = 0;
+                moveCounterEl.textContent = moveCount;
+                updatePuzzlePieceBackgrounds();
+                checkConnections();
+            }
+            
+            function resetGame() {
+                createPuzzle();
+                shufflePieces();
+            }
+            
+            function checkWin() {
+                let isSolved = true;
+                
+                for (let i = 0; i < totalPieces; i++) {
+                    if (parseInt(pieces[i].dataset.index) !== i) {
+                        isSolved = false;
+                        break;
+                    }
+                }
+                
+                if (isSolved) {
+                    isGameSolved = true;
+                    messageEl.textContent = 'Συγχαρητήρια! Λύσατε το παζλ σε ' + moveCount + ' μετακινήσεις!';
+                    messageEl.classList.add('win-message');
+                    
+                    pieces.forEach(piece => {
+                        piece.classList.add('connected');
+                    });
+                    
+                    celebrateVictory();
+                }
+            }
+            
+            function celebrateVictory() {
+                puzzleContainer.classList.add('solved');
+                createConfetti();
+                celebrationEl.style.opacity = '1';
+                
+                // Fade out από το μικρό μέγεθος και εμφάνιση κειμένου
+                setTimeout(() => {
+                    puzzleContainer.classList.add('fade-out');
+                    
+                    // Εμφάνιση του κειμένου μετά το fade out
+                    setTimeout(() => {
+                        puzzleContainer.style.display = 'none';
+                        showTextReveal();
+                    }, 1500);
+                }, 2000);
+            }
+            
+            function showTextReveal() {
+                const textRevealContainer = document.createElement('div');
+                textRevealContainer.className = 'text-reveal-container';
+                
+                const textReveal = document.createElement('div');
+                textReveal.className = 'text-reveal';
+                textReveal.innerHTML = `
+                    <div class="message-content">
+                        <h3>Κάθετος Αργαλειός</h3>
+                        <p>Χρησιμοποιώντας τα υφαντικά βάρη και τα αδράχτια που βρέθηκαν στο Κτήριο 10 του Κάστρου Καλλιθέας (ελληνιστική περίοδος), οι αρχαιολόγοι ανακατασκεύασαν πειραματικά έναν όρθιο αργαλειό για να αναδείξουν την υφαντική τέχνη της αρχαίας πόλης.</p>
+                    </div>
+                `;
+                
+                textRevealContainer.appendChild(textReveal);
+                
+                // Εισαγωγή του container ακριβώς μετά το puzzle container
+                gameContainer.insertBefore(textRevealContainer, puzzleContainer.nextSibling);
+            }
+            
+            function createConfetti() {
+                celebrationEl.innerHTML = '';
+                const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FF8E53', '#6A0572'];
+                
+                for (let i = 0; i < 150; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.top = '-10px';
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    confetti.style.width = Math.random() * 10 + 5 + 'px';
+                    confetti.style.height = Math.random() * 10 + 5 + 'px';
+                    
+                    const animationDuration = Math.random() * 3 + 2;
+                    
+                    confetti.style.animation = `fall ${animationDuration}s linear forwards`;
+                    
+                    celebrationEl.appendChild(confetti);
+                }
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fall {
+                        0% {
+                            transform: translateY(0) rotate(0deg);
+                            opacity: 1;
+                        }
+                        100% {
+                            transform: translateY(100vh) rotate(${Math.random() * 360}deg);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            solveBtn.addEventListener('click', resetGame);
+            window.addEventListener('resize', updatePuzzlePieceBackgrounds);
+            
+            createPuzzle();
+            shufflePieces();
+        });
+    </script>
+</body>
+</html>
