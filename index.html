@@ -683,7 +683,11 @@
                 document.head.appendChild(style);
             }
             
-            solveBtn.addEventListener('click', resetGame);
+            // Αλλαγή: Το κουμπί "Νέο Παιχνίδι" οδηγεί στο Games page
+            solveBtn.addEventListener('click', function() {
+                window.location.href = 'https://conchr.github.io/Games/';
+            });
+            
             window.addEventListener('resize', updatePuzzlePieceBackgrounds);
             
             createPuzzle();
