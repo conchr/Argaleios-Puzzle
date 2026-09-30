@@ -1,0 +1,837 @@
+/* ============================================================
+   0. FONTS & TOKENS
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --bg-deep: #080b16;
+    --bg-mid: #0f1424;
+    --bg-surface: rgba(22, 27, 46, 0.72);
+
+    --gold: #d4af37;
+    --gold-light: #f0c75e;
+    --gold-dark: #a8842c;
+
+    --purple: #8b5cf6;
+    --green: #3cb371;
+    --green-light: #86efac;
+    --red: #dc2626;
+    --red-light: #f87171;
+    --amber: #f59e0b;
+    --blue: #60a5fa;
+
+    --text-primary: #f0f2f8;
+    --text-secondary: #a8aec5;
+    --text-muted: #6c7490;
+
+    --border-subtle: rgba(212, 175, 55, 0.12);
+    --border-strong: rgba(212, 175, 55, 0.35);
+    --border-white: rgba(255, 255, 255, 0.08);
+
+    --shadow-card: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(212, 175, 55, 0.08);
+    --shadow-glow: 0 0 40px rgba(212, 175, 55, 0.25), 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    --r-sm: 12px;
+    --r-md: 16px;
+    --r-lg: 24px;
+
+    --smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Hangman sizing — και vw ΚΑΙ vh για fit-to-screen */
+    --hangman-h: min(22vh, 200px);
+    --slot-w: clamp(28px, 6vw, 42px);
+    --slot-h: clamp(38px, 8vw, 54px);
+}
+
+/* ============================================================
+   1. RESET & BODY — 100vh NO SCROLL
+   ============================================================ */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text-primary);
+    background-color: var(--bg-deep);
+    background-image:
+        radial-gradient(ellipse 80% 55% at 50% 0%, rgba(139, 92, 246, 0.16) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(212, 175, 55, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(96, 165, 250, 0.08) 0%, transparent 60%);
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(0.5rem, 1.5vh, 1.25rem);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    gap: clamp(0.4rem, 1.2vh, 1rem);
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(212, 175, 55, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.025) 1px, transparent 1px);
+    background-size: 64px 64px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+/* ============================================================
+   2. MAIN TITLE
+   ============================================================ */
+.main-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(1.25rem, min(3vw, 4vh), 2rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    background: linear-gradient(135deg, #f5d886 0%, #d4af37 45%, #a8842c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--gold);
+    filter: drop-shadow(0 2px 16px rgba(212, 175, 55, 0.3));
+    text-align: center;
+    padding: 0 0.5rem;
+    text-wrap: balance;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   3. GAME CONTAINER (CARD)
+   ============================================================ */
+#game-container {
+    background: var(--bg-surface);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card);
+    padding: clamp(0.85rem, 1.8vh, 1.5rem) clamp(1rem, 2vw, 1.75rem);
+    max-width: min(95vw, 700px);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.4rem, 1vh, 0.85rem);
+    position: relative;
+    z-index: 1;
+    max-height: calc(100vh - 3rem);
+    overflow: hidden;
+    animation: cardEnter 0.7s var(--smooth) both;
+    transition: all 0.5s ease;
+}
+
+@keyframes cardEnter {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+#game-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(212, 175, 55, 0.4) 20%,
+        rgba(240, 199, 94, 0.95) 50%,
+        rgba(212, 175, 55, 0.4) 80%,
+        transparent 100%);
+    z-index: 2;
+}
+
+/* ============================================================
+   4. HINT BOX
+   ============================================================ */
+.hint-box {
+    width: 100%;
+    background: linear-gradient(135deg,
+        rgba(212, 175, 55, 0.10),
+        rgba(22, 27, 46, 0.55));
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--gold);
+    border-radius: var(--r-sm);
+    padding: clamp(0.4rem, 1vh, 0.65rem) clamp(0.75rem, 1.5vw, 1rem);
+    display: flex;
+    align-items: center;
+    gap: clamp(0.5rem, 1vw, 0.75rem);
+    text-align: left;
+    flex-shrink: 0;
+}
+
+.hint-label {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 700;
+    color: var(--gold-light);
+    font-size: clamp(0.72rem, min(0.9vw, 1.3vh), 0.88rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+}
+
+.hint-box p {
+    color: var(--text-secondary);
+    font-size: clamp(0.72rem, min(0.9vw, 1.3vh), 0.88rem);
+    line-height: 1.4;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* ============================================================
+   5. PLAY AREA (SVG + INFO)
+   ============================================================ */
+#play-area {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(0.75rem, 2vw, 1.25rem);
+    width: 100%;
+    align-items: center;
+    justify-items: center;
+    flex-shrink: 0;
+}
+
+.hangman-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hangman-svg {
+    height: var(--hangman-h);
+    width: auto;
+    display: block;
+    filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.25));
+    transition: filter 0.3s var(--smooth);
+}
+
+.hangman-svg.shake {
+    animation: shakeSvg 0.4s var(--smooth);
+}
+
+@keyframes shakeSvg {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-5px); }
+    40%      { transform: translateX(5px); }
+    60%      { transform: translateX(-3px); }
+    80%      { transform: translateX(3px); }
+}
+
+.hangman-frame {
+    stroke: var(--gold);
+    stroke-width: 6;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.hangman-frame-thin {
+    stroke: var(--gold);
+    stroke-width: 4;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.hangman-part {
+    opacity: 0;
+    transition: opacity 0.45s var(--smooth);
+    stroke: var(--text-primary);
+    stroke-width: 4;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.hangman-part.visible {
+    opacity: 1;
+}
+
+/* ---- Play info (word + mistakes) ---- */
+.play-info {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.4rem, 1vh, 0.75rem);
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.word-display {
+    display: flex;
+    gap: clamp(5px, 1.2vw, 10px);
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 0.25rem;
+}
+
+.letter-slot {
+    width: var(--slot-w);
+    height: var(--slot-h);
+    border-bottom: 3px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(1.3rem, 5vw, 1.9rem);
+    font-weight: 700;
+    color: var(--gold-light);
+    transition: all 0.3s var(--smooth);
+    text-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
+    line-height: 1;
+}
+
+.letter-slot.revealed {
+    animation: revealLetter 0.55s var(--bounce);
+}
+
+@keyframes revealLetter {
+    0%   { transform: scale(0) rotate(-180deg); opacity: 0; }
+    60%  { transform: scale(1.25) rotate(12deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.mistakes {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(0.85rem, min(1.2vw, 1.8vh), 1.05rem);
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.18);
+}
+
+.mistakes span {
+    color: var(--red-light);
+    font-size: 1.15em;
+    font-weight: 700;
+}
+
+/* ============================================================
+   6. ALPHABET
+   ============================================================ */
+.alphabet {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: clamp(4px, 0.8vw, 7px);
+    width: 100%;
+    max-width: 540px;
+    flex-shrink: 0;
+}
+
+.letter-btn {
+    background: linear-gradient(135deg,
+        rgba(212, 175, 55, 0.08),
+        rgba(22, 27, 46, 0.65));
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    padding: clamp(0.3rem, 0.9vh, 0.5rem) 0;
+    min-height: clamp(32px, 4.5vh, 44px);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(0.85rem, min(1.2vw, 1.8vh), 1.05rem);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: all 0.2s var(--smooth);
+    user-select: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.letter-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: var(--gold);
+    color: var(--gold-light);
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(212, 175, 55, 0.25);
+    outline: none;
+}
+
+.letter-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.letter-btn:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+.letter-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+}
+
+.letter-btn.correct {
+    background: linear-gradient(135deg,
+        rgba(60, 179, 113, 0.30),
+        rgba(34, 139, 34, 0.35));
+    border-color: rgba(134, 239, 172, 0.5);
+    color: var(--green-light);
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(60, 179, 113, 0.3);
+}
+
+.letter-btn.wrong {
+    background: linear-gradient(135deg,
+        rgba(220, 38, 38, 0.28),
+        rgba(153, 27, 27, 0.35));
+    border-color: rgba(248, 113, 113, 0.5);
+    color: var(--red-light);
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(220, 38, 38, 0.25);
+}
+
+/* ============================================================
+   7. MESSAGE
+   ============================================================ */
+#message {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    min-height: 1.5rem;
+    font-size: clamp(0.9rem, min(1.35vw, 1.9vh), 1.15rem);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--r-sm);
+    transition: all 0.5s ease;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    text-align: center;
+}
+
+#message.win-message {
+    color: var(--gold-light);
+    background: linear-gradient(135deg,
+        rgba(212, 175, 55, 0.18),
+        rgba(168, 132, 44, 0.10));
+    border: 1px solid var(--border-strong);
+    padding: 0.6rem 1rem;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+    animation: pulseWin 1.5s infinite;
+    font-size: clamp(1rem, min(1.6vw, 2.2vh), 1.3rem);
+}
+
+#message.lose-message {
+    color: var(--red-light);
+    background: linear-gradient(135deg,
+        rgba(220, 38, 38, 0.15),
+        rgba(153, 27, 27, 0.08));
+    border: 1px solid rgba(220, 38, 38, 0.35);
+    padding: 0.6rem 1rem;
+    font-size: clamp(1rem, min(1.6vw, 2.2vh), 1.3rem);
+}
+
+@keyframes pulseWin {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+/* ============================================================
+   8. CONTROLS
+   ============================================================ */
+#controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.btn-nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: clamp(0.6rem, 1.3vh, 0.9rem) clamp(1.25rem, 2.5vw, 1.75rem);
+    min-height: clamp(42px, 5.5vh, 56px);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border-strong);
+    background: linear-gradient(135deg,
+        rgba(212, 175, 55, 0.18),
+        rgba(168, 132, 44, 0.28));
+    color: var(--gold-light);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: clamp(0.82rem, min(1vw, 1.4vh), 0.98rem);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.3s var(--smooth);
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    min-width: 180px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-nav::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg,
+        transparent 0%, transparent 35%,
+        rgba(255, 255, 255, 0.18) 50%,
+        transparent 65%, transparent 100%);
+    transform: translateX(-120%);
+    transition: transform 0.65s var(--smooth);
+    pointer-events: none;
+}
+
+.btn-nav:hover::after {
+    transform: translateX(120%);
+}
+
+.btn-nav:hover,
+.btn-nav:focus {
+    transform: translateY(-3px);
+    border-color: var(--gold-light);
+    box-shadow:
+        0 10px 32px rgba(0, 0, 0, 0.45),
+        0 0 40px rgba(212, 175, 55, 0.4);
+    outline: none;
+}
+
+.btn-nav:active {
+    transform: translateY(0);
+}
+
+.btn-nav i {
+    font-size: 0.95em;
+}
+
+/* ============================================================
+   9. INFO OVERLAY (WIN)
+   ============================================================ */
+.info-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 11, 22, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1rem, 3vw, 2rem);
+    animation: fadeIn 0.5s var(--smooth);
+}
+
+.info-overlay.visible {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.info-card {
+    background: linear-gradient(135deg,
+        rgba(212, 175, 55, 0.12),
+        rgba(22, 27, 46, 0.95));
+    border: 2px solid var(--border-strong);
+    border-radius: var(--r-lg);
+    box-shadow:
+        0 0 60px rgba(212, 175, 55, 0.35),
+        0 24px 80px rgba(0, 0, 0, 0.7);
+    max-width: 520px;
+    width: 100%;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    text-align: center;
+    animation: slideUp 0.6s var(--bounce);
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(60px) scale(0.95); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent,
+        var(--gold-light) 50%,
+        transparent);
+}
+
+.info-card img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border-strong);
+    margin-bottom: 1rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    display: block;
+}
+
+.info-card h3 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 700;
+    color: var(--gold-light);
+    font-size: clamp(1.15rem, 4vw, 1.5rem);
+    margin-bottom: 0.75rem;
+    text-shadow: 0 0 16px rgba(212, 175, 55, 0.5);
+    line-height: 1.2;
+    text-wrap: balance;
+}
+
+.info-card p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: clamp(0.85rem, 2.5vw, 1rem);
+    margin-bottom: 0.75rem;
+}
+
+.info-card p strong {
+    color: var(--gold-light);
+    font-weight: 600;
+}
+
+.info-card .meta {
+    font-size: 0.82em;
+    opacity: 0.75;
+    margin-top: 1rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.info-card .btn-nav {
+    margin-top: 1rem;
+    min-width: 160px;
+}
+
+/* ============================================================
+   10. RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+    :root {
+        --hangman-h: min(20vh, 170px);
+    }
+
+    #game-container {
+        padding: 0.85rem;
+        gap: 0.5rem;
+    }
+
+    .btn-nav {
+        min-width: 140px;
+    }
+}
+
+/* Στενές οθόνες: το play-area γίνεται κάθετο */
+@media (max-width: 520px) {
+    #play-area {
+        grid-template-columns: 1fr;
+        gap: clamp(0.5rem, 1.5vh, 0.85rem);
+    }
+
+    :root {
+        --hangman-h: min(18vh, 145px);
+    }
+
+    .hint-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
+
+@media (max-width: 400px) {
+    :root {
+        --hangman-h: min(16vh, 125px);
+        --slot-w: clamp(26px, 7vw, 36px);
+        --slot-h: clamp(34px, 9vw, 46px);
+    }
+
+    .main-title {
+        font-size: 1.05rem;
+    }
+
+    .btn-nav {
+        min-width: 120px;
+        padding: 0.5rem 1rem;
+        font-size: 0.78rem;
+        min-height: 38px;
+    }
+
+    .alphabet {
+        gap: 4px;
+    }
+
+    .letter-btn {
+        min-height: 30px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Very short height — compact */
+@media (max-height: 620px) {
+    :root {
+        --hangman-h: min(18vh, 150px);
+    }
+
+    body {
+        gap: 0.25rem;
+        padding: 0.4rem;
+    }
+
+    .main-title {
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    #game-container {
+        padding: 0.6rem 0.85rem;
+        gap: 0.35rem;
+    }
+
+    .hint-box {
+        padding: 0.35rem 0.65rem;
+    }
+
+    .hint-box p {
+        font-size: 0.72rem;
+        line-height: 1.3;
+    }
+
+    .btn-nav {
+        min-height: 38px;
+        padding: 0.45rem 1rem;
+        font-size: 0.78rem;
+    }
+
+    .letter-btn {
+        min-height: 30px;
+        padding: 0.25rem 0;
+        font-size: 0.85rem;
+    }
+
+    #message {
+        font-size: 0.85rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* Landscape phone — very compact */
+@media (orientation: landscape) and (max-height: 500px) {
+    :root {
+        --hangman-h: min(38vh, 140px);
+        --slot-w: clamp(24px, 3.5vw, 34px);
+        --slot-h: clamp(32px, 5vh, 42px);
+    }
+
+    body {
+        padding: 0.35rem;
+        gap: 0.2rem;
+    }
+
+    .main-title {
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    #game-container {
+        max-width: 100%;
+        padding: 0.5rem 0.75rem;
+        gap: 0.3rem;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .hint-box {
+        flex-basis: 100%;
+        padding: 0.25rem 0.6rem;
+    }
+
+    .hint-box p {
+        font-size: 0.68rem;
+    }
+
+    #play-area {
+        flex: 1 1 auto;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem;
+        min-width: 0;
+    }
+
+    .alphabet {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+
+    .letter-btn {
+        min-height: 28px;
+        font-size: 0.78rem;
+        padding: 0.2rem 0;
+    }
+
+    .btn-nav {
+        min-height: 32px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.72rem;
+        min-width: 110px;
+    }
+
+    #message {
+        font-size: 0.75rem;
+        min-height: auto;
+        padding: 0.2rem 0.5rem;
+        flex-basis: 100%;
+    }
+}
+
+/* ============================================================
+   11. ACCESSIBILITY
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+button:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 3px;
+    border-radius: 6px;
+}
